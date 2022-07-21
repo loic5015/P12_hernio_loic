@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Customer, Company
+from .models import Customer, Company, Event, Note
 from management.serializers import UserSerializer
 
 
@@ -54,10 +54,58 @@ class ContractListSerializer(ModelSerializer):
 
     def get_customer(self, request, instance):
         queryset = instance.customer.all()
-        serializer = CompanySerializer(queryset, many=True)
+        serializer = CustomerListSerializer(queryset, many=True)
         return serializer.data
 
     def get_saler(self, request, instance):
         queryset = instance.users.all()
         serializer = UserSerializer(queryset, many=True)
+        return serializer.data
+
+
+class EventCreateUpdateSerializer(ModelSerializer):
+    """
+       Serialize the model Customer
+    """
+    class Meta:
+        model = Event
+        fields = ['attendees', 'date_event', 'status', 'date_updated', 'support', 'customer']
+
+
+class EventListSerializer(ModelSerializer):
+
+    class Meta:
+        model: Event
+        fields = '__all__'
+
+    def get_customer(self, request, instance):
+        queryset = instance.customer.all()
+        serializer = CustomerListSerializer(queryset, many=True)
+        return serializer.data
+
+    def get_support(self, request, instance):
+        queryset = instance.users.all()
+        serializer = UserSerializer(queryset, many=True)
+        return serializer.data
+
+
+class NoteCreateUpdateSerializer(ModelSerializer):
+    """
+       Serialize the model Customer
+    """
+    class Meta:
+        model = Note
+        fields = ['note']
+
+
+
+class NoteListSerializer(ModelSerializer):
+
+    class Meta:
+        model: Note
+        fields = '__all__'
+
+    def get_event(self, request, instance):
+        queryset = event.customer.all()
+        serializer = EventListSerializer(queryset, many=True)
         return serializer.data

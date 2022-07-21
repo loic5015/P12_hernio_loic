@@ -31,5 +31,26 @@ class Contract(models.Model):
     payement_due = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField()
-    customer = models.ForeignKey('Company', on_delete=models.CASCADE, related_name='contract')
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='contract')
     saler = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contract')
+
+
+class Event(models.Model):
+    CHOICES_STATUS = (
+        ("SIGNE", "Signé"),
+        ("EN COURS", "En cours"),
+        ("TERMINE", "Terminé"),
+    )
+
+    status = models.CharField(max_length=15, choices=CHOICES_STATUS, default="SIGNE")
+    attendees = models.CharField(max_length=100)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField()
+    date_event = models.DateTimeField()
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='event')
+    support = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event')
+
+class Note(models.Model):
+
+    note = models.CharField(max_length=255)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='notes')
