@@ -3,6 +3,9 @@ from .serializers import UsersDetailsSerializer, CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Users
 from .permissions import IsAuthorize, IsManagerCrm
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+
 
 
 class UsersCreateViewset(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -46,6 +49,7 @@ class UsersListViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Users.objects.all()
 
     serializer_class = UserSerializer
+
 
     permission_classes = [IsAuthorize, IsManagerCrm]
 
