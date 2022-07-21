@@ -10,7 +10,7 @@ class Customer(models.Model):
     mobile = models.IntegerField()
     phone = models.IntegerField()
     date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField()
+    date_updated = models.DateTimeField(null=True)
     company = models.ForeignKey('Company', on_delete=models.CASCADE, related_name='customer')
     saler = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='customer')
 
@@ -30,7 +30,7 @@ class Contract(models.Model):
     amount = models.FloatField()
     payement_due = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField()
+    date_updated = models.DateTimeField(null=True)
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='contract')
     saler = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contract')
 
@@ -45,7 +45,7 @@ class Event(models.Model):
     status = models.CharField(max_length=15, choices=CHOICES_STATUS, default="SIGNE")
     attendees = models.CharField(max_length=100)
     date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField()
+    date_updated = models.DateTimeField(null=True)
     date_event = models.DateTimeField()
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='event')
     support = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event')
@@ -54,3 +54,5 @@ class Note(models.Model):
 
     note = models.CharField(max_length=255)
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='notes')
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='note')
+    support = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='note')
