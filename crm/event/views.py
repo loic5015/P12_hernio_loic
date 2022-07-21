@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomerCreateSerializer, CustomerListSerializer, ContractCreateSerializer,\
     ContractListSerializer, EventCreateSerializer, EventListSerializer, NoteCreateUpdateSerializer, \
-    NoteListSerializer, CustomerUpdateSerializer, ContractUpdateSerializer, EventUpdateSerializer
+    NoteListSerializer
 from management.permissions import IsAuthorize
 from management.models import Users
 from .models import Company, Customer, Contract, Event, Note
-
+import datetime
 
 class AdminCustomerViewset(ModelViewSet):
     """
@@ -65,7 +65,8 @@ class AdminCustomerViewset(ModelViewSet):
             company.save()
         customer.saler = user
         customer.company = company
-        serializer = CustomerUpdateSerializer(customer, data=request.data)
+        customer.date_updated = datetime.datetime.now()
+        serializer = CustomerCreateSerializer(customer, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -96,13 +97,17 @@ class AdminContractViewset(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def list(self, request, *args, **kwargs):
-        serializer = ContractListSerializer(queryset, many=True)
+        serializer = ContractListSerializer(self.queryset, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def create(self, request, *args, **kwargs):
-        user = Users.objects.get(email=request.data['saler'])
-        customer = Customer.objects.get(name=request.data['customer'])
-        if customer is None:
+        try:
+            user = Users.objects.get(email=request.data['saler'])
+        except Users.DoesNotExist:
+            return Response({'error', 'saler not  exists'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            customer = Customer.objects.get(email=request.data['customer'])
+        except Customer.DoesNotExist:
             return Response({'error', 'customer not  exists'}, status=status.HTTP_400_BAD_REQUEST)
         contract = Contract(saler=user, customer=customer)
         serializer = ContractCreateSerializer(contract, data=request.data)
@@ -123,14 +128,21 @@ class AdminContractViewset(ModelViewSet):
         contract = get_object_or_404(self.queryset, pk=pk)
         if contract is None:
             return Response({'error', 'contract not  exists'}, status=status.HTTP_400_BAD_REQUEST)
-        user = Users.objects.get(email=request.data['saler'])
-        customer = Customer.objects.get(email=request.data['customer'])
+        try:
+            user = Users.objects.get(email=request.data['saler'])
+        except Users.DoesNotExist:
+            return Response({'error', 'saler not  exists'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            customer = Customer.objects.get(email=request.data['customer'])
+        except Customer.DoesNotExist:
+            return Response({'error', 'customer not  exists'}, status=status.HTTP_400_BAD_REQUEST)
         if customer is None:
             return Response({'error', 'customer not exists'}, status=status.HTTP_400_BAD_REQUEST)
 
         contract.saler = user
         contract.customer = customer
-        serializer = ContractUpdateSerializer(contract, data=request.data)
+        contract.date_updated = datetime.datetime.now()
+        serializer = ContractCreateSerializer(contract, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

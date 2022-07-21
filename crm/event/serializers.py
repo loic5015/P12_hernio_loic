@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
-from .models import Customer, Company, Event, Note
+from .models import Customer, Company, Event, Note, Contract
 from management.serializers import UserSerializer
 
 class CompanySerializer(ModelSerializer):
@@ -22,18 +22,6 @@ class CustomerCreateSerializer(ModelSerializer):
                   'company', 'saler']
 
 
-class CustomerUpdateSerializer(ModelSerializer):
-    """
-       Serialize the model Customer
-    """
-    company = CompanySerializer(read_only=True)
-    saler = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Customer
-        fields = ['first_name', 'last_name', 'date_updated', 'email', 'phone', 'mobile',
-                  'company', 'saler']
-
 
 class CustomerListSerializer(ModelSerializer):
     company = CompanySerializer(read_only=True)
@@ -51,20 +39,9 @@ class ContractCreateSerializer(ModelSerializer):
     customer = CustomerListSerializer(read_only=True)
 
     class Meta:
-        model = Customer
+        model = Contract
         fields = ['amount', 'payement_due', 'status', 'customer', 'saler']
 
-
-class ContractUpdateSerializer(ModelSerializer):
-    """
-       Serialize the model Customer
-    """
-    saler = UserSerializer(read_only=True)
-    customer = CustomerListSerializer(read_only=True)
-
-    class Meta:
-        model = Customer
-        fields = ['amount', 'payement_due', 'status', 'date_updated', 'customer', 'saler']
 
 
 class ContractListSerializer(ModelSerializer):
@@ -73,7 +50,7 @@ class ContractListSerializer(ModelSerializer):
     customer = CustomerListSerializer(read_only=True)
 
     class Meta:
-        model = Customer
+        model = Contract
         fields = '__all__'
 
 
@@ -89,16 +66,6 @@ class EventCreateSerializer(ModelSerializer):
         fields = ['attendees', 'date_event', 'status', 'date_updated', 'support', 'customer']
 
 
-class EventUpdateSerializer(ModelSerializer):
-    """
-       Serialize the model Customer
-    """
-    support = UserSerializer(read_only=True)
-    customer = CustomerListSerializer(read_only=True)
-
-    class Meta:
-        model = Event
-        fields = ['attendees', 'date_event', 'status', 'date_updated', 'support', 'customer']
 
 
 class EventListSerializer(ModelSerializer):

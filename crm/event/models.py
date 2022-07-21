@@ -26,7 +26,7 @@ class Contract(models.Model):
         ("EN COURS", "En cours"),
     )
 
-    type = models.CharField(max_length=15, choices=CHOICES_STATUS, default="MANAGEMENT")
+    status = models.CharField(max_length=15, choices=CHOICES_STATUS, default="En cours")
     amount = models.FloatField()
     payement_due = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True)
