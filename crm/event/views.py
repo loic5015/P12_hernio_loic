@@ -246,28 +246,48 @@ class AdminNoteViewset(ModelViewSet):
 
         return [permission() for permission in permission_classes]
 
-    def list(self, request, note_pk=None, issue_pk=None, *args, **kwargs):
-        queryset = self.queryset.filter(note=note_pk)
-        serializer = NoteListSerializer(queryset, many=True)
+    def list(self, request, pk=None, event_pk=None, *args, **kwargs):
+        notes = self.queryset.filter(event=event_pk)
+        serializer = NoteListSerializer(notes, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def create(self, request, project_pk=None, issue_pk=None, *args, **kwargs):
-        events = Event.objects.all()
-        event = get_object_or_404(events, pk=event_pk)
-        if event is not None:
-            note = Note(event=event)
-            serializer = NoteCreateUpdateSerializer(comment, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, event_pk=None, *args, **kwargs):
+        try:
+            events = Event.objects.all()
+            event = get_object_or_404(events, pk=event_pk)
+        except Users.DoesNotExist:
+            return Response({'error', 'event not  exists'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            support = Users.objects.get(email=request.data['support'])
+        except Users.DoesNotExist:
+            support = None
+        try:
+            customer = Customer.objects.get(email=request.data['customer'])
+        except Customer.DoesNotExist:
+            customer = None
+        note = Note(event=event, support=support, customer=customer)
+
+        serializer = NoteCreateUpdateSerializer(note, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(data={'error': 'event unknow'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
     def update(self, request, event_pk=None, pk=None, *args, **kwargs):
         note = get_object_or_404(self.queryset, pk=pk)
+        try:
+            support = Users.objects.get(email=request.data['support'])
+        except Users.DoesNotExist:
+            support = None
+        try:
+            customer = Customer.objects.get(email=request.data['customer'])
+        except Customer.DoesNotExist:
+            customer = None
+        note.customer = customer
+        note.support = support
         serializer = NoteCreateUpdateSerializer(note, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -285,5 +305,5 @@ class AdminNoteViewset(ModelViewSet):
 
     def retrieve(self, request, pk=None, *args, **kwargs):
         note = get_object_or_404(self.queryset, pk=pk)
-        serializer = NoteListSerializer(comment)
+        serializer = NoteListSerializer(note)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

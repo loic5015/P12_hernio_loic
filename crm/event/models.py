@@ -55,5 +55,5 @@ class Note(models.Model):
 
     note = models.CharField(max_length=255)
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='notes')
-    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='note')
-    support = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='note')
+    customer = models.ForeignKey('Customer', null=True, on_delete=models.CASCADE, related_name='note')
+    support = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name='note')
