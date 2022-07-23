@@ -49,6 +49,7 @@ class Event(models.Model):
     date_event = models.DateTimeField()
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='event')
     support = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event')
+    contract = models.ForeignKey('Contract', unique=True, on_delete=models.CASCADE, related_name='event')
 
 class Note(models.Model):
 

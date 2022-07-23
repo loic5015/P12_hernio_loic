@@ -63,7 +63,7 @@ class EventCreateSerializer(ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ['attendees', 'date_event', 'status', 'date_updated', 'support', 'customer']
+        fields = ['attendees', 'date_event', 'status', 'support', 'customer', 'contract']
 
 
 
@@ -72,6 +72,7 @@ class EventListSerializer(ModelSerializer):
 
     support = UserSerializer(read_only=True)
     customer = CustomerListSerializer(read_only=True)
+    contract = ContractListSerializer(read_only=True)
 
     class Meta:
         model = Event
@@ -82,19 +83,20 @@ class NoteCreateUpdateSerializer(ModelSerializer):
     """
        Serialize the model Customer
     """
+    support = UserSerializer(read_only=True)
+    customer = CustomerListSerializer(read_only=True)
+
     class Meta:
         model = Note
-        fields = ['note']
+        fields = ['note', 'support', 'customer']
 
 
 
 class NoteListSerializer(ModelSerializer):
+    support = UserSerializer(read_only=True)
+    customer = CustomerListSerializer(read_only=True)
 
     class Meta:
         model = Note
         fields = '__all__'
 
-    def get_event(self, request, instance):
-        queryset = event.customer.all()
-        serializer = EventListSerializer(queryset, many=True)
-        return serializer.data
