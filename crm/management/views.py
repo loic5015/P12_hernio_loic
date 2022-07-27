@@ -23,7 +23,7 @@ class UsersCreateViewset(mixins.CreateModelMixin, mixins.UpdateModelMixin, views
     def put(self, request, pk=None, *args, **kwargs):
         user = get_object_or_404(self.queryset, pk=pk)
         if user is None:
-            return Response({'error', 'project not  exists'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error', 'user not  exists'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = UsersDetailsSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -34,7 +34,7 @@ class UsersCreateViewset(mixins.CreateModelMixin, mixins.UpdateModelMixin, views
     def destroy(self, request, pk=None, *args, **kwargs):
         user = get_object_or_404(self.queryset, pk=pk)
         user.delete()
-        return Response(data={'response': 'project deleted'}, status=status.HTTP_201_CREATED)
+        return Response(data={'response': 'user deleted'}, status=status.HTTP_201_CREATED)
 
 
 
