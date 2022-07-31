@@ -15,6 +15,6 @@ class IsManagerCrm(BasePermission):
     Grant permission for management user
     """
     def has_permission(self, request, view):
-        if request.user.type == 'MANAGEMENT':
+        if request.user.is_superuser:
             return True
         return False

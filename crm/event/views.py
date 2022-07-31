@@ -2,10 +2,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
+from .permissions import IsSaler, IsSupport
 from .serializers import CustomerCreateSerializer, CustomerListSerializer, ContractCreateSerializer,\
     ContractListSerializer, EventCreateSerializer, EventListSerializer, NoteCreateUpdateSerializer, \
     NoteListSerializer
-from management.permissions import IsAuthorize
+from management.permissions import IsAuthorize, IsManagerCrm
 from management.models import Users
 from .models import Company, Customer, Contract, Event, Note
 import datetime
@@ -17,15 +18,24 @@ class AdminCustomerViewset(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerCreateSerializer
 
+
+
+
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'get':
-            permission_classes = [IsAuthorize]
-        elif self.action == 'create':
-            permission_classes = [IsAuthorize]
+        if self.request.user.is_superuser :
+            permission_classes = [IsAuthorize, IsManagerCrm]
+        elif self.action == 'list' or self.action == 'get':
+            if self.request.user.groups.filter(name='saler').exists():
+                permission_classes = [IsAuthorize, IsSaler]
+            else:
+                permission_classes = [IsAuthorize, IsSupport]
+        elif self.action == 'create' or self.action == 'update' :
+            permission_classes = [IsAuthorize, IsSaler]
         else:
-            permission_classes = [IsAuthorize]
+            permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
+
 
     def list(self, request, *args, **kwargs):
         serializer = CustomerListSerializer(self.queryset, many=True)
@@ -87,12 +97,12 @@ class AdminContractViewset(ModelViewSet):
     serializer_class = ContractCreateSerializer
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'get':
-            permission_classes = [IsAuthorize]
-        elif self.action == 'create':
-            permission_classes = [IsAuthorize]
+        if self.request.user.is_superuser :
+            permission_classes = [IsAuthorize, IsManagerCrm]
+        elif self.action == 'list' or self.action == 'get' or self.action == 'create' or self.action == 'update':
+            permission_classes = [IsAuthorize, IsSaler]
         else:
-            permission_classes = [IsAuthorize]
+            permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
 
@@ -163,14 +173,23 @@ class AdminEventViewset(ModelViewSet):
     serializer_class = EventCreateSerializer
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'get':
-            permission_classes = [IsAuthorize]
+        if self.request.user.is_superuser :
+            permission_classes = [IsAuthorize, IsManagerCrm]
+        elif self.action == 'list' or self.action == 'get':
+            if self.request.user.groups.filter(name='saler').exists():
+                permission_classes = [IsAuthorize, IsSaler]
+            else:
+                permission_classes = [IsAuthorize, IsSupport]
         elif self.action == 'create':
-            permission_classes = [IsAuthorize]
+            permission_classes = [IsAuthorize, IsSaler]
+        elif self.action == 'update':
+            permission_classes = [IsAuthorize, IsSupport]
         else:
-            permission_classes = [IsAuthorize]
+            permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
+
+
 
     def list(self, request, *args, **kwargs):
         serializer = EventListSerializer(self.queryset, many=True)
@@ -237,14 +256,17 @@ class AdminNoteViewset(ModelViewSet):
     serializer_class = NoteCreateUpdateSerializer
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'get':
-            permission_classes = [IsAuthorize]
-        elif self.action == 'create':
-            permission_classes = [IsAuthorize]
+        if self.request.user.is_superuser :
+            permission_classes = [IsAuthorize, IsManagerCrm]
+        elif self.action == 'list' or self.action == 'get':
+            permission_classes = [IsAuthorize, IsSupport]
+        elif self.action == 'create' and self.action == 'update':
+            permission_classes = [IsAuthorize, IsSupport]
         else:
-            permission_classes = [IsAuthorize]
+            permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
+
 
     def list(self, request, pk=None, event_pk=None, *args, **kwargs):
         notes = self.queryset.filter(event=event_pk)
