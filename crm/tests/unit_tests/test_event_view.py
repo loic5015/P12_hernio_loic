@@ -7,6 +7,9 @@ from rest_framework.test import force_authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from event.models import Customer, Event, Contract, Note, Company
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APIRequestFactory
+from django.contrib.auth.models import Group
+
 
 client = Client()
 
@@ -126,10 +129,11 @@ def test_AdminCustomerViewset_list(client):
         password="12345Test",
         mobile=12345,
         phone=12345,
-        type="SUPPORT", )
-    refresh = RefreshToken.for_user(user)
-    headers_dict = {"Authorization": "Bearer "+ str(refresh.access_token)}
-    rv = client.get(f'/customers/', {}, headers=headers_dict, follow=True)
+        type="SALER", )
+    token, created = Token.objects.get_or_create(user=user)
+    print(token.key)
+    headers_dict = {"authorization": "Bearer "+ token.key}
+    rv = client.get(f'/customers', {}, headers=headers_dict, follow=True)
 
     assert rv.status_code == 201
 
@@ -139,17 +143,19 @@ def test_AdminContractViewset_list(client):
         email="loic.hernio@gmail.com",
         first_name="loic",
         last_name="hernio",
-        password="12345Test",
         mobile=12345,
         phone=12345,
-        type="SUPPORT", )
-    """refresh = RefreshToken.for_user(user)
-    headers_dict = {"authorization": "Bearer "+ str(refresh.access_token)}
-    print(headers_dict)"""
-    token, created = Token.objects.get_or_create(user=user)
-    client = Client(HTTP_AUTHORIZATION='Bearer ' + token.key)
-
-    rv = client.get(f'/contracts', {}, follow=True)
+        type="SALER", )
+    user.set_password('12345Test')
+    my_group, created = Group.objects.get_or_create(name='saler')
+    my_group.user_set.add(user)
+    user.save()
+    refresh = RefreshToken.for_user(user)
+ #   client.force_authenticate(user=user, token=refresh.access_token)
+#    headers_dict = {"authorization": "Bearer "+ str(refresh.access_token)}
+ #   print(headers_dict)
+    rv = client.get(f'/customers', {}, follow=True)
+    force_authenticate(rv, user=user, token=str(refresh.access_token))
     assert rv.status_code == 201
 
 """@pytest.mark.django_db
@@ -158,4 +164,26 @@ def test_login(client):
     data=dict(email=user.email, password=user.password)
     rv = client.post(f'/login', data, follow=True)
     assert rv.status_code == 201"""
+
+
+@pytest.mark.django_db
+def test_AdminContractViewset_list2(client):
+    user = Users.objects.create(
+        email="loic.hernio@gmail.com",
+        first_name="loic",
+        last_name="hernio",
+        mobile=12345,
+        phone=12345,
+        type="SALER", )
+    user.set_password('12345Test')
+    user.save()
+    refresh = RefreshToken.for_user(user)
+    factory = APIRequestFactory()
+    rv = factory.get(f'/customers', {}, follow=True)
+    force_authenticate(rv,user=user, token=refresh.access_token)
+    view = AdminCustomerViewset.list().as_view()
+    response = view(rv)
+    response.render()
+    self.assertEqual(response.status_code, 201)
+    #assert rv.status_code == 201
 
