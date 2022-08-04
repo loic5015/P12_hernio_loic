@@ -9,35 +9,46 @@ from event.models import Customer, Event, Contract, Note, Company
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIRequestFactory
 from django.contrib.auth.models import Group
-
+import json
+from django.contrib.auth.hashers import make_password
+from rest_framework.test import APIClient
 
 client = Client()
+PASSWORD= "12345Test"
 
 
-
-
+@pytest.mark.django_db
 def create_saler():
-    user = Users.objects.create(
+    user = Users.objects.create_user(
         email="loic2.hernio@gmail.com",
         first_name="loic2",
         last_name="hernio",
-        password="12345Test",
         mobile=12345,
         phone=12345,
-        type="SALER", )
+        type="SALER",
+        is_active=True,
+        password=PASSWORD
+    )
+    my_group, created = Group.objects.get_or_create(name='saler')
+    my_group.user_set.add(user)
     return user
 
+@pytest.mark.django_db
 def create_support():
-    user = Users.objects.create(
+    user = Users.objects.create_user(
         email="loic3.hernio@gmail.com",
         first_name="loic3",
         last_name="hernio",
-        password="12345Test",
         mobile=12345,
         phone=12345,
-        type="SUPPORT", )
+        type="SUPPORT",
+        is_active=True,
+        password=PASSWORD)
+    my_group, created = Group.objects.get_or_create(name='support')
+    my_group.user_set.add(user)
     return user
 
+@pytest.mark.django_db
 def create_customer():
     company = Company.objects.create(
         name="Apple"
@@ -54,6 +65,7 @@ def create_customer():
     )
     return customer
 
+@pytest.mark.django_db
 def create_contract():
     customer =create_customer()
     saler = Users.objects.get(email="loic2.hernio@gmail.com")
@@ -66,6 +78,7 @@ def create_contract():
     )
     return contract
 
+@pytest.mark.django_db
 def create_event():
     contract = create_contract()
     support = create_support()
@@ -80,6 +93,21 @@ def create_event():
         support = support,
     )
     return event
+
+@pytest.mark.django_db
+def create_note():
+    event = create_event()
+    try:
+        user = Users.objects.get(email="loic3.hernio@gmail.com")
+    except Users.DoesNotExist:
+        user = create_support()
+
+    note = Note.objects.create(
+        note = "lorem ipsum ....",
+        support = user,
+        event = event,
+    )
+    return note
 
 @pytest.mark.django_db
 def test_user_model():
@@ -120,70 +148,262 @@ def test_event_model():
     expected_value = "support: loic3 hernio  event: 1"
     assert str(event) == expected_value
 
-@pytest.mark.django_db
-def test_AdminCustomerViewset_list(client):
-    user = Users.objects.create(
-        email="loic.hernio@gmail.com",
-        first_name="loic",
-        last_name="hernio",
-        password="12345Test",
-        mobile=12345,
-        phone=12345,
-        type="SALER", )
-    token, created = Token.objects.get_or_create(user=user)
-    print(token.key)
-    headers_dict = {"authorization": "Bearer "+ token.key}
-    rv = client.get(f'/customers', {}, headers=headers_dict, follow=True)
 
+@pytest.mark.django_db
+def user_authentication_saler(client):
+    try:
+        user = Users.objects.get(email="loic2.hernio@gmail.com")
+    except Users.DoesNotExist:
+        user = create_saler()
+    data = {"email": user.email, "password": PASSWORD}
+    r = client.post("/login/", data=data, follow=True)
+    response = r.json()
+    auth_token = response["access"]
+    token = f"Bearer {auth_token}"
+    return token
+
+@pytest.mark.django_db
+def user_authentication_support(client):
+    try:
+        user = Users.objects.get(email="loic3.hernio@gmail.com")
+    except Users.DoesNotExist:
+        user = create_support()
+    data = {"email": user.email, "password": PASSWORD}
+    r = client.post("/login/", data=data, follow=True)
+    response = r.json()
+    auth_token = response["access"]
+    token = f"Bearer {auth_token}"
+    return token
+
+
+@pytest.mark.django_db
+def test_AdminCustomerViewset_list_saler(client):
+
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/customers", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminCustomerViewset_list_support(client):
+
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/customers", follow=True)
     assert rv.status_code == 201
 
 @pytest.mark.django_db
-def test_AdminContractViewset_list(client):
-    user = Users.objects.create(
-        email="loic.hernio@gmail.com",
-        first_name="loic",
-        last_name="hernio",
-        mobile=12345,
-        phone=12345,
-        type="SALER", )
-    user.set_password('12345Test')
-    my_group, created = Group.objects.get_or_create(name='saler')
-    my_group.user_set.add(user)
-    user.save()
-    refresh = RefreshToken.for_user(user)
- #   client.force_authenticate(user=user, token=refresh.access_token)
-#    headers_dict = {"authorization": "Bearer "+ str(refresh.access_token)}
- #   print(headers_dict)
-    rv = client.get(f'/customers', {}, follow=True)
-    force_authenticate(rv, user=user, token=str(refresh.access_token))
-    assert rv.status_code == 201
-
-"""@pytest.mark.django_db
-def test_login(client):
-    user = create_saler()
-    data=dict(email=user.email, password=user.password)
-    rv = client.post(f'/login', data, follow=True)
-    assert rv.status_code == 201"""
+def test_AdminCustomerViewset_get_saler(client):
+    customer = create_customer()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/customers/{customer.id}", follow=True)
+    assert rv.status_code == 200
 
 
 @pytest.mark.django_db
-def test_AdminContractViewset_list2(client):
-    user = Users.objects.create(
-        email="loic.hernio@gmail.com",
-        first_name="loic",
-        last_name="hernio",
-        mobile=12345,
-        phone=12345,
-        type="SALER", )
-    user.set_password('12345Test')
-    user.save()
-    refresh = RefreshToken.for_user(user)
-    factory = APIRequestFactory()
-    rv = factory.get(f'/customers', {}, follow=True)
-    force_authenticate(rv,user=user, token=refresh.access_token)
-    view = AdminCustomerViewset.list().as_view()
-    response = view(rv)
-    response.render()
-    self.assertEqual(response.status_code, 201)
-    #assert rv.status_code == 201
+def test_AdminCustomerViewset_get_support(client):
+    customer = create_customer()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/customers/{customer.id}", follow=True)
+    assert rv.status_code == 200
 
+@pytest.mark.django_db
+def test_AdminCustomerViewset_delete_saler(client):
+    customer = create_customer()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/customers/{customer.id}", follow=True)
+    assert rv.status_code == 200
+
+
+@pytest.mark.django_db
+def test_AdminCustomerViewset_delete_support(client):
+    customer = create_customer()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/customers/{customer.id}", follow=True)
+    print(rv.json())
+    assert rv.status_code == 200
+
+@pytest.mark.django_db
+def test_AdminContractViewset_list_saler(client):
+
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/contracts", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminContractViewset_list_support(client):
+
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/contracts", follow=True)
+    assert rv.status_code == 201
+
+@pytest.mark.django_db
+def test_AdminContractViewset_get_saler(client):
+    contract = create_contract()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/contracts/{contract.id}", follow=True)
+    assert rv.status_code == 200
+
+
+@pytest.mark.django_db
+def test_AdminContractViewset_get_support(client):
+    contract = create_contract()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/contracts/{contract.id}", follow=True)
+    assert rv.status_code == 200
+
+@pytest.mark.django_db
+def test_AdminContractViewset_delete_saler(client):
+    contract = create_contract()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/contracts/{contract.id}", follow=True)
+    assert rv.status_code == 200
+
+
+@pytest.mark.django_db
+def test_AdminContractViewset_delete_support(client):
+    contract = create_contract()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/contracts/{contract.id}", follow=True)
+    print(rv.json())
+    assert rv.status_code == 200
+
+@pytest.mark.django_db
+def test_AdminEventViewset_list_saler(client):
+
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/events", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminEventViewset_list_support(client):
+
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get("/events", follow=True)
+    assert rv.status_code == 201
+
+@pytest.mark.django_db
+def test_AdminEventViewset_get_saler(client):
+    event = create_event()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{event.id}", follow=True)
+    assert rv.status_code == 200
+
+
+@pytest.mark.django_db
+def test_AdminEventViewset_get_support(client):
+    event = create_event()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{event.id}", follow=True)
+    assert rv.status_code == 200
+
+@pytest.mark.django_db
+def test_AdminEventViewset_delete_saler(client):
+    event = create_event()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/events/{event.id}", follow=True)
+    assert rv.status_code == 200
+
+
+@pytest.mark.django_db
+def test_AdminEventViewset_delete_support(client):
+    event = create_event()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.delete(f"/events/{event.id}", follow=True)
+    print(rv.json())
+    assert rv.status_code == 200
+
+@pytest.mark.django_db
+def test_AdminNoteViewset_list_saler(client):
+    note = create_note()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminNoteViewset_list_support(client):
+    note = create_note()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes", follow=True)
+    assert rv.status_code == 201
+
+@pytest.mark.django_db
+def test_AdminNoteViewset_get_saler(client):
+    note = create_note()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes/{note.id}", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminEventViewset_get_support(client):
+    note = create_note()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes/{note.id}", follow=True)
+    assert rv.status_code == 201
+
+@pytest.mark.django_db
+def test_AdminEventViewset_delete_saler(client):
+    note = create_note()
+    token = user_authentication_saler(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes/{note.id}", follow=True)
+    assert rv.status_code == 201
+
+
+@pytest.mark.django_db
+def test_AdminEventViewset_delete_support(client):
+    note = create_note()
+    token = user_authentication_support(client)
+    client1 = APIClient()
+    client1.credentials(HTTP_AUTHORIZATION=token)
+    rv = client1.get(f"/events/{note.event.id}/notes/{note.id}", follow=True)
+    print(rv.json())
+    assert rv.status_code == 201
