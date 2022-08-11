@@ -1,6 +1,7 @@
-from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer
 from .models import Customer, Company, Event, Note, Contract
 from management.serializers import UserSerializer
+
 
 class CompanySerializer(ModelSerializer):
 
@@ -22,7 +23,6 @@ class CustomerCreateSerializer(ModelSerializer):
                   'company', 'saler']
 
 
-
 class CustomerListSerializer(ModelSerializer):
     company = CompanySerializer(read_only=True)
     saler = UserSerializer(read_only=True)
@@ -30,6 +30,7 @@ class CustomerListSerializer(ModelSerializer):
     class Meta:
         model = Customer
         fields = '__all__'
+
 
 class ContractCreateSerializer(ModelSerializer):
     """
@@ -41,7 +42,6 @@ class ContractCreateSerializer(ModelSerializer):
     class Meta:
         model = Contract
         fields = ['amount', 'payement_due', 'status', 'customer', 'saler']
-
 
 
 class ContractListSerializer(ModelSerializer):
@@ -64,8 +64,6 @@ class EventCreateSerializer(ModelSerializer):
     class Meta:
         model = Event
         fields = ['attendees', 'date_event', 'status', 'support', 'customer', 'contract']
-
-
 
 
 class EventListSerializer(ModelSerializer):
@@ -91,7 +89,6 @@ class NoteCreateUpdateSerializer(ModelSerializer):
         fields = ['note', 'support', 'customer']
 
 
-
 class NoteListSerializer(ModelSerializer):
     support = UserSerializer(read_only=True)
     customer = CustomerListSerializer(read_only=True)
@@ -99,4 +96,3 @@ class NoteListSerializer(ModelSerializer):
     class Meta:
         model = Note
         fields = '__all__'
-

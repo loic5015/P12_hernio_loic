@@ -11,6 +11,7 @@ from management.models import Users
 from .models import Company, Customer, Contract, Event, Note
 import datetime
 
+
 class AdminCustomerViewset(ModelViewSet):
     """
     Define all the endpoints and permission for a instance Customer
@@ -18,24 +19,20 @@ class AdminCustomerViewset(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerCreateSerializer
 
-
-
-
     def get_permissions(self):
-        if self.request.user.is_superuser :
+        if self.request.user.is_superuser:
             permission_classes = [IsAuthorize, IsManagerCrm]
-        elif self.action == 'list' or self.action == 'get':
+        elif self.action == 'list' or self.action == 'retrieve':
             if self.request.user.groups.filter(name='saler').exists():
                 permission_classes = [IsAuthorize, IsSaler]
             else:
                 permission_classes = [IsAuthorize, IsSupport]
-        elif self.action == 'create' or self.action == 'update' :
+        elif self.action == 'create' or self.action == 'update':
             permission_classes = [IsAuthorize, IsSaler]
         else:
             permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
-
 
     def list(self, request, *args, **kwargs):
         serializer = CustomerListSerializer(self.queryset, many=True)
@@ -83,7 +80,7 @@ class AdminCustomerViewset(ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None, *args, **kwargs):
+    def delete(self, request, pk=None, *args, **kwargs):
         customer = get_object_or_404(self.queryset, pk=pk)
         customer.delete()
         return Response(data={'response': 'customer deleted'}, status=status.HTTP_201_CREATED)
@@ -97,9 +94,9 @@ class AdminContractViewset(ModelViewSet):
     serializer_class = ContractCreateSerializer
 
     def get_permissions(self):
-        if self.request.user.is_superuser :
+        if self.request.user.is_superuser:
             permission_classes = [IsAuthorize, IsManagerCrm]
-        elif self.action == 'list' or self.action == 'get' or self.action == 'create' or self.action == 'update':
+        elif self.action == 'list' or self.action == 'retrieve' or self.action == 'create' or self.action == 'update':
             permission_classes = [IsAuthorize, IsSaler]
         else:
             permission_classes = [IsAuthorize, IsManagerCrm]
@@ -159,7 +156,7 @@ class AdminContractViewset(ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None, *args, **kwargs):
+    def delete(self, request, pk=None, *args, **kwargs):
         contract = get_object_or_404(self.queryset, pk=pk)
         contract.delete()
         return Response(data={'response': 'contract deleted'}, status=status.HTTP_201_CREATED)
@@ -173,9 +170,9 @@ class AdminEventViewset(ModelViewSet):
     serializer_class = EventCreateSerializer
 
     def get_permissions(self):
-        if self.request.user.is_superuser :
+        if self.request.user.is_superuser:
             permission_classes = [IsAuthorize, IsManagerCrm]
-        elif self.action == 'list' or self.action == 'get':
+        elif self.action == 'list' or self.action == 'retrieve':
             if self.request.user.groups.filter(name='saler').exists():
                 permission_classes = [IsAuthorize, IsSaler]
             else:
@@ -188,8 +185,6 @@ class AdminEventViewset(ModelViewSet):
             permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
-
-
 
     def list(self, request, *args, **kwargs):
         serializer = EventListSerializer(self.queryset, many=True)
@@ -242,7 +237,7 @@ class AdminEventViewset(ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None, *args, **kwargs):
+    def delete(self, request, pk=None, *args, **kwargs):
         event = get_object_or_404(self.queryset, pk=pk)
         event.delete()
         return Response(data={'response': 'event deleted'}, status=status.HTTP_201_CREATED)
@@ -256,9 +251,9 @@ class AdminNoteViewset(ModelViewSet):
     serializer_class = NoteCreateUpdateSerializer
 
     def get_permissions(self):
-        if self.request.user.is_superuser :
+        if self.request.user.is_superuser:
             permission_classes = [IsAuthorize, IsManagerCrm]
-        elif self.action == 'list' or self.action == 'get':
+        elif self.action == 'list' or self.action == 'retrieve':
             permission_classes = [IsAuthorize, IsSupport]
         elif self.action == 'create' and self.action == 'update':
             permission_classes = [IsAuthorize, IsSupport]
@@ -266,7 +261,6 @@ class AdminNoteViewset(ModelViewSet):
             permission_classes = [IsAuthorize, IsManagerCrm]
 
         return [permission() for permission in permission_classes]
-
 
     def list(self, request, pk=None, event_pk=None, *args, **kwargs):
         notes = self.queryset.filter(event=event_pk)
@@ -297,7 +291,6 @@ class AdminNoteViewset(ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-
     def update(self, request, event_pk=None, pk=None, *args, **kwargs):
         note = get_object_or_404(self.queryset, pk=pk)
         try:
@@ -317,7 +310,7 @@ class AdminNoteViewset(ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, event_pk=None, pk=None, *args, **kwargs):
+    def delete(self, request, event_pk=None, pk=None, *args, **kwargs):
         note = get_object_or_404(self.queryset, pk=pk)
         if note is not None:
             note.delete()

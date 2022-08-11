@@ -1,11 +1,10 @@
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, viewsets, status
 from .serializers import UsersDetailsSerializer, CustomTokenObtainPairSerializer, UserSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Users
 from .permissions import IsAuthorize, IsManagerCrm
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-
 
 
 class UsersCreateViewset(mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -37,7 +36,6 @@ class UsersCreateViewset(mixins.CreateModelMixin, mixins.UpdateModelMixin, views
         return Response(data={'response': 'user deleted'}, status=status.HTTP_201_CREATED)
 
 
-
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
@@ -50,6 +48,4 @@ class UsersListViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     serializer_class = UserSerializer
 
-
     permission_classes = [IsAuthorize, IsManagerCrm]
-

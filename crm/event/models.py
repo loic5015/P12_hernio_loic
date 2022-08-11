@@ -25,6 +25,7 @@ class Company(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+
 class Contract(models.Model):
     CHOICES_STATUS = (
         ("SIGNE", "Signé"),
@@ -41,6 +42,7 @@ class Contract(models.Model):
 
     def __str__(self):
         return f'customer: {self.customer} saler: {self.saler}'
+
 
 class Event(models.Model):
     CHOICES_STATUS = (
@@ -60,6 +62,7 @@ class Event(models.Model):
 
     def __str__(self):
         return f'support: {self.support}  event: {str(self.id)}'
+
 
 class Note(models.Model):
 
